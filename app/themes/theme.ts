@@ -1,10 +1,11 @@
 /* theme.ts */
-import { extendTheme } from "@chakra-ui/react";
-import { Button } from "./button";
+import { extendTheme } from "@chakra-ui/react"
+import { Button } from "./button"
 
 export const theme = extendTheme({
   colors: {
     brand: {
+      50: "#ece7fe",
       100: "#ede6ff",
       200: "#c6b6ff",
       300: "#a086fa",
@@ -25,4 +26,4 @@ export const theme = extendTheme({
     heading: "var(--font-rubik)",
     body: "var(--font-rubik)",
   },
-});
+})

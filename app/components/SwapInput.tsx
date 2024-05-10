@@ -1,29 +1,41 @@
-"use client";
+"use client"
 
-import { Box, Button, Flex, FormLabel, Input, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  FormLabel,
+  Input,
+  Stack,
+  Text,
+  VStack,
+} from "@chakra-ui/react"
 
 interface Props {
-  name: string;
-  label?: string;
-  rightText?: string;
-  tokenElement?: React.ReactNode;
+  name: string
+  label?: string
+  rightText?: string
+  chainElement?: React.ReactNode
+  tokenElement?: React.ReactNode
 }
 
 export default function SwapInput({
   name,
   label = "You pay",
   rightText,
+  chainElement,
   tokenElement,
 }: Props) {
   return (
-    <Box p="4" bg="brand.bgInput" rounded="lg">
-      <Flex justify="space-between" align="center" color="gray.500">
-        <FormLabel fontWeight="regular" fontSize="sm" id={name}>
+    <VStack p="4" bg="brand.bgInput" rounded="lg" align="flex-start">
+      {chainElement}
+      <Flex justify="space-between" align="center" color="gray.500" w="full">
+        <Text fontWeight="regular" fontSize="sm" id={name}>
           {label}
-        </FormLabel>
+        </Text>
         <Text fontSize="xs">{rightText}</Text>
       </Flex>
-      <Flex justify="space-between" gap="3">
+      <Flex justify="space-between" align="center" gap="3" w="full">
         <Input
           name={name}
           placeholder="0.0"
@@ -33,6 +45,6 @@ export default function SwapInput({
         />
         {tokenElement}
       </Flex>
-    </Box>
-  );
+    </VStack>
+  )
 }
