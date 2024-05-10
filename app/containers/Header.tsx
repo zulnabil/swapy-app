@@ -46,6 +46,7 @@ export default function Header() {
         {isConnected && address ? (
           <Button
             colorScheme="brand"
+            fontWeight="bold"
             onClick={() => open({ view: "Account" })}
             leftIcon={
               <Image
@@ -61,6 +62,7 @@ export default function Header() {
         ) : (
           <Button
             colorScheme="brand"
+            fontWeight="bold"
             isLoading={isLoading}
             loadingText="Loading..."
             onClick={() => open()}

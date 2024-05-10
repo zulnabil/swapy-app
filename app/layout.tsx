@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 import { fonts } from "./fonts";
 import Header from "~/app/containers/Header";
+import { Box, Container } from "@chakra-ui/react";
 
 export const metadata: Metadata = {
   title: "Swapy App",
@@ -18,7 +19,11 @@ export default function RootLayout({
       <body>
         <Providers>
           <Header />
-          {children}
+          <Box bg="brand.bg">
+            <Container maxW="container.lg" minH="calc(100svh - 80px)" p="5">
+              {children}
+            </Container>
+          </Box>
         </Providers>
       </body>
     </html>
