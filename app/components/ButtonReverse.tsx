@@ -1,12 +1,13 @@
-"use client";
+"use client"
 
-import { ArrowDownIcon } from "@chakra-ui/icons";
-import { IconButton } from "@chakra-ui/react";
+import { ArrowDownIcon } from "@chakra-ui/icons"
+import { ChakraProps, IconButton, IconButtonProps } from "@chakra-ui/react"
 
-export default function ButtonReverse() {
+type Props = Omit<IconButtonProps, "aria-label"> & ChakraProps
+
+export default function ButtonReverse(props: Props) {
   return (
     <IconButton
-      aria-label="btn-reverse"
       colorScheme="brand"
       variant="solid"
       size="lg"
@@ -14,8 +15,10 @@ export default function ButtonReverse() {
         bg: "brand.600",
         transform: "rotate(180deg)",
       }}
+      {...props}
+      aria-label="btn-reverse"
     >
       <ArrowDownIcon boxSize={5} />
     </IconButton>
-  );
+  )
 }

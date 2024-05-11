@@ -27,6 +27,26 @@ export default function Swap() {
     dispatch,
   } = useMainContext()
   const [mode, setMode] = useState<"swap" | "buy">("swap")
+
+  function handleReverseFromTo() {
+    dispatch({
+      type: "setSelectedChainIdFrom",
+      payload: selectedChainIdTo,
+    })
+    dispatch({
+      type: "setSelectedChainIdTo",
+      payload: selectedChainIdFrom,
+    })
+    dispatch({
+      type: "setSelectedTokenFrom",
+      payload: selectedTokenTo,
+    })
+    dispatch({
+      type: "setSelectedTokenTo",
+      payload: selectedTokenFrom,
+    })
+  }
+
   return (
     <Stack spacing="5" w="full" bg="white" maxW="lg" rounded="2xl" p="8">
       {/* Header */}
@@ -81,7 +101,7 @@ export default function Swap() {
       />
 
       <Flex mt={["-8", "-9"]} mb={["-8", "-9"]} justify="center">
-        <ButtonReverse />
+        <ButtonReverse onClick={handleReverseFromTo} />
       </Flex>
 
       <SwapInput
