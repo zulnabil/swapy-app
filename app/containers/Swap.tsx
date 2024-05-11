@@ -2,7 +2,6 @@
 
 import { ChevronDownIcon, SettingsIcon } from "@chakra-ui/icons"
 import {
-  Box,
   Button,
   Divider,
   Flex,
@@ -69,7 +68,7 @@ export default function Swap() {
         name="to"
         label="You get"
         rightText="≈ $1,000.00"
-        chainElement={<ChainSelector defaultChain="Arbitrum" />}
+        chainElement={<ChainSelector defaultChainId={421613} />}
         tokenElement={
           <Button
             variant="outline"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { use, useMemo, useRef, useState } from "react"
 import { ChevronDownIcon, Search2Icon } from "@chakra-ui/icons"
 import {
   Popover,
@@ -12,17 +12,23 @@ import {
   InputGroup,
   InputLeftElement,
   Input,
+  Image,
 } from "@chakra-ui/react"
+import { useMainContext } from "~/app/contexts/MainContext"
 
 interface Props {
-  defaultChain?: string
+  defaultChainId?: string | number
 }
 
-export default function ChainSelector({ defaultChain = "Ethereum" }: Props) {
-  const [selectedChain, setSelectedChain] = useState(defaultChain)
+export default function ChainSelector({ defaultChainId = 5 }: Props) {
+  const { squid } = useMainContext()
+  const [selectedChainId, setSelectedChainId] = useState(defaultChainId)
   const [search, setSearch] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
+  /**
+   * Clear search input and reset search state
+   */
   function handleClear() {
     setSearch("")
 
@@ -31,11 +37,23 @@ export default function ChainSelector({ defaultChain = "Ethereum" }: Props) {
     }
   }
 
+  /**
+   * Get selected chain from squid chains list by selectedChainId
+   */
+  const selectedChain = useMemo(
+    () => squid?.chains?.find((chain) => chain.chainId === selectedChainId),
+    [selectedChainId, squid]
+  )
+
   return (
     <Popover initialFocusRef={inputRef} onClose={handleClear}>
       {({ onClose }) => {
-        function handleSelect(chain: string) {
-          setSelectedChain(chain)
+        /**
+         * Handle select chain event and set selected chain id
+         * @param chainId
+         */
+        function handleSelect(chainId: string | number) {
+          setSelectedChainId(chainId)
           onClose()
           handleClear()
         }
@@ -43,13 +61,21 @@ export default function ChainSelector({ defaultChain = "Ethereum" }: Props) {
           <>
             <PopoverTrigger>
               <Button
-                colorScheme="brand"
+                colorScheme="gray"
                 variant="outline"
                 size="sm"
                 fontWeight="medium"
                 rightIcon={<ChevronDownIcon />}
+                leftIcon={
+                  <Image
+                    h="20px"
+                    w="20px"
+                    alt={`img-${selectedChain?.chainName}`}
+                    src={selectedChain?.chainIconURI}
+                  />
+                }
               >
-                {selectedChain}
+                {selectedChain?.chainName || "Select Network"}
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -73,27 +99,41 @@ export default function ChainSelector({ defaultChain = "Ethereum" }: Props) {
                 </InputGroup>
               </PopoverHeader>
               <PopoverBody px="2">
-                {MOCK_ITEMS.map(
-                  (chain) =>
-                    chain.toLowerCase().includes(search.toLowerCase()) && (
-                      <Button
-                        key={chain}
-                        color="gray.700"
-                        fontWeight="regular"
-                        variant="ghost"
-                        w="full"
-                        justifyContent="flex-start"
-                        rounded="lg"
-                        px="2"
-                        _hover={{
-                          bg: "brand.100",
-                        }}
-                        onClick={() => handleSelect(chain)}
-                      >
-                        {chain}
-                      </Button>
-                    )
-                )}
+                {squid?.chains
+                  // filter chains by search input
+                  ?.filter((chain) =>
+                    chain?.chainName
+                      ?.toLowerCase()
+                      .includes(search.toLowerCase())
+                  )
+                  // limit to show max 15 items
+                  .slice(0, 15)
+                  .map((chain) => (
+                    <Button
+                      key={chain?.chainId}
+                      color="gray.700"
+                      fontWeight="regular"
+                      variant="ghost"
+                      w="full"
+                      justifyContent="flex-start"
+                      rounded="lg"
+                      px="2"
+                      _hover={{
+                        bg: "brand.100",
+                      }}
+                      leftIcon={
+                        <Image
+                          h="24px"
+                          w="24px"
+                          alt={`img-${chain?.chainName}`}
+                          src={chain?.chainIconURI}
+                        />
+                      }
+                      onClick={() => handleSelect(chain?.chainId)}
+                    >
+                      {chain?.chainName}
+                    </Button>
+                  ))}
               </PopoverBody>
             </PopoverContent>
           </>
@@ -102,20 +142,3 @@ export default function ChainSelector({ defaultChain = "Ethereum" }: Props) {
     </Popover>
   )
 }
-
-const MOCK_ITEMS = [
-  "Ethereum",
-  "Binance Smart Chain",
-  "Polygon",
-  "Avalanche",
-  "Fantom",
-  "Harmony",
-  "xDai",
-  "Arbitrum",
-  "Optimism",
-  "Celo",
-  "Moonbeam",
-  "Near",
-  "Ronin",
-  "Solana",
-]
