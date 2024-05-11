@@ -21,6 +21,11 @@ export const theme = extendTheme({
   },
   components: {
     Button,
+    Text: {
+      baseStyle: {
+        color: "gray.600",
+      },
+    },
   },
   fonts: {
     heading: "var(--font-rubik)",

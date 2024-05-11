@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDownIcon, SettingsIcon } from "@chakra-ui/icons"
+import { SettingsIcon } from "@chakra-ui/icons"
 import {
   Button,
   Divider,
@@ -13,8 +13,19 @@ import { useState } from "react"
 import SwapInput from "~/app/components/SwapInput"
 import ButtonReverse from "~/app/components/ButtonReverse"
 import ChainSelector from "~/app/containers/ChainSelector"
+import TokenSelector from "~/app/containers/TokenSelector"
+import { useMainContext } from "~/app/contexts/MainContext"
 
 export default function Swap() {
+  const {
+    state: {
+      selectedChainIdFrom,
+      selectedChainIdTo,
+      selectedTokenFrom,
+      selectedTokenTo,
+    },
+    dispatch,
+  } = useMainContext()
   const [mode, setMode] = useState<"swap" | "buy">("swap")
   return (
     <Stack spacing="5" w="full" bg="white" maxW="lg" rounded="2xl" p="8">
@@ -47,20 +58,29 @@ export default function Swap() {
       <SwapInput
         name="from"
         rightText="Balance: 1.17 BTC"
-        chainElement={<ChainSelector />}
+        chainElement={
+          <ChainSelector
+            selectedChainId={selectedChainIdFrom}
+            onSelectChain={(chainId) =>
+              dispatch({ type: "setSelectedChainIdFrom", payload: chainId })
+            }
+          />
+        }
         tokenElement={
-          <Button
-            variant="outline"
-            size="sm"
-            fontWeight="medium"
-            rightIcon={<ChevronDownIcon />}
-          >
-            BTC
-          </Button>
+          <TokenSelector
+            selectedChainId={selectedChainIdFrom}
+            selectedToken={selectedTokenFrom}
+            onSelectToken={(token) =>
+              dispatch({
+                type: "setSelectedTokenFrom",
+                payload: token,
+              })
+            }
+          />
         }
       />
 
-      <Flex mt="-9" mb="-9" justify="center">
+      <Flex mt={["-8", "-9"]} mb={["-8", "-9"]} justify="center">
         <ButtonReverse />
       </Flex>
 
@@ -68,16 +88,25 @@ export default function Swap() {
         name="to"
         label="You get"
         rightText="≈ $1,000.00"
-        chainElement={<ChainSelector defaultChainId={421613} />}
+        chainElement={
+          <ChainSelector
+            selectedChainId={selectedChainIdTo}
+            onSelectChain={(chainId) =>
+              dispatch({ type: "setSelectedChainIdTo", payload: chainId })
+            }
+          />
+        }
         tokenElement={
-          <Button
-            variant="outline"
-            size="sm"
-            fontWeight="medium"
-            rightIcon={<ChevronDownIcon />}
-          >
-            ETH
-          </Button>
+          <TokenSelector
+            selectedChainId={selectedChainIdTo}
+            selectedToken={selectedTokenTo}
+            onSelectToken={(token) =>
+              dispatch({
+                type: "setSelectedTokenTo",
+                payload: token,
+              })
+            }
+          />
         }
       />
 

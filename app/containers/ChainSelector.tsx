@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { ChevronDownIcon, Search2Icon } from "@chakra-ui/icons"
 import {
   Popover,
@@ -18,11 +18,18 @@ import { useMainContext } from "~/app/contexts/MainContext"
 
 interface Props {
   defaultChainId?: string | number
+  selectedChainId?: string | number
+  onSelectChain: (chainId: string | number) => void
 }
 
-export default function ChainSelector({ defaultChainId = 5 }: Props) {
-  const { squid } = useMainContext()
-  const [selectedChainId, setSelectedChainId] = useState(defaultChainId)
+export default function ChainSelector({
+  defaultChainId,
+  selectedChainId,
+  onSelectChain,
+}: Props) {
+  const {
+    state: { squid },
+  } = useMainContext()
   const [search, setSearch] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -41,8 +48,11 @@ export default function ChainSelector({ defaultChainId = 5 }: Props) {
    * Get selected chain from squid chains list by selectedChainId
    */
   const selectedChain = useMemo(
-    () => squid?.chains?.find((chain) => chain.chainId === selectedChainId),
-    [selectedChainId, squid]
+    () =>
+      squid?.chains?.find(
+        (chain) => chain.chainId === (selectedChainId || defaultChainId)
+      ),
+    [defaultChainId, selectedChainId, squid?.chains]
   )
 
   return (
@@ -53,7 +63,7 @@ export default function ChainSelector({ defaultChainId = 5 }: Props) {
          * @param chainId
          */
         function handleSelect(chainId: string | number) {
-          setSelectedChainId(chainId)
+          onSelectChain(chainId)
           onClose()
           handleClear()
         }
@@ -67,15 +77,19 @@ export default function ChainSelector({ defaultChainId = 5 }: Props) {
                 fontWeight="medium"
                 rightIcon={<ChevronDownIcon />}
                 leftIcon={
-                  <Image
-                    h="20px"
-                    w="20px"
-                    alt={`img-${selectedChain?.chainName}`}
-                    src={selectedChain?.chainIconURI}
-                  />
+                  selectedChain ? (
+                    <Image
+                      h="20px"
+                      w="20px"
+                      alt={`img-${selectedChain?.chainName}`}
+                      src={selectedChain?.chainIconURI}
+                    />
+                  ) : (
+                    <></>
+                  )
                 }
               >
-                {selectedChain?.chainName || "Select Network"}
+                {selectedChain?.chainName || "Select Chain"}
               </Button>
             </PopoverTrigger>
             <PopoverContent
