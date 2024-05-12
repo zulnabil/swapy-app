@@ -5,19 +5,18 @@ import { createContext, useContext, useReducer } from "react"
 
 type MainContextStateType = {
   squid: Squid | null
-  selectedChainIdFrom: string | number
-  selectedTokenFrom: string | number
-  selectedChainIdTo: string | number
-  selectedTokenTo: string | number
+  fromChain: string | number
+  fromToken: string | number
+  fromAmount: string
+  toChain: string | number
+  toToken: string | number
+  toAddress: string
+  slippage: number
 }
 
 type Action = {
-  type:
-    | "setSelectedChainIdFrom"
-    | "setSelectedTokenFrom"
-    | "setSelectedChainIdTo"
-    | "setSelectedTokenTo"
-  payload: string | number
+  type: "setState"
+  payload: Omit<Partial<MainContextStateType>, "squid">
 }
 
 type MainContextType = {
@@ -29,17 +28,8 @@ const MainContext = createContext<MainContextType | undefined>(undefined)
 
 function contextReducer(state: MainContextStateType, action: Action) {
   switch (action.type) {
-    case "setSelectedChainIdFrom": {
-      return { ...state, selectedChainIdFrom: action.payload }
-    }
-    case "setSelectedTokenFrom": {
-      return { ...state, selectedTokenFrom: action.payload }
-    }
-    case "setSelectedChainIdTo": {
-      return { ...state, selectedChainIdTo: action.payload }
-    }
-    case "setSelectedTokenTo": {
-      return { ...state, selectedTokenTo: action.payload }
+    case "setState": {
+      return { ...state, ...action.payload }
     }
   }
 }
@@ -51,10 +41,13 @@ interface MainContextProviderProps extends Pick<MainContextStateType, "squid"> {
 function MainContextProvider({ children, squid }: MainContextProviderProps) {
   const [state, dispatch] = useReducer(contextReducer, {
     squid,
-    selectedChainIdFrom: "",
-    selectedTokenFrom: "",
-    selectedChainIdTo: "",
-    selectedTokenTo: "",
+    fromChain: "",
+    fromToken: "",
+    fromAmount: "",
+    toChain: "",
+    toToken: "",
+    toAddress: "",
+    slippage: 1.0,
   })
   const value = { state: { ...state, squid }, dispatch }
 

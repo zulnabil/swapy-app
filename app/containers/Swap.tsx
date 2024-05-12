@@ -9,43 +9,44 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import SwapInput from "~/app/components/SwapInput"
 import ButtonReverse from "~/app/components/ButtonReverse"
 import ChainSelector from "~/app/containers/ChainSelector"
 import TokenSelector from "~/app/containers/TokenSelector"
 import { useMainContext } from "~/app/contexts/MainContext"
+import { useWeb3ModalAccount } from "@web3modal/ethers/react"
 
 export default function Swap() {
   const {
-    state: {
-      selectedChainIdFrom,
-      selectedChainIdTo,
-      selectedTokenFrom,
-      selectedTokenTo,
-    },
+    state: { fromChain, toChain, fromToken, toToken, fromAmount, toAddress },
     dispatch,
   } = useMainContext()
+  const { address } = useWeb3ModalAccount()
   const [mode, setMode] = useState<"swap" | "buy">("swap")
+  const [isReadyForRoute, setIsReadyForRoute] = useState(false)
 
   function handleReverseFromTo() {
     dispatch({
-      type: "setSelectedChainIdFrom",
-      payload: selectedChainIdTo,
-    })
-    dispatch({
-      type: "setSelectedChainIdTo",
-      payload: selectedChainIdFrom,
-    })
-    dispatch({
-      type: "setSelectedTokenFrom",
-      payload: selectedTokenTo,
-    })
-    dispatch({
-      type: "setSelectedTokenTo",
-      payload: selectedTokenFrom,
+      type: "setState",
+      payload: {
+        fromChain: toChain,
+        toChain: fromChain,
+        fromToken: toToken,
+        toToken: fromToken,
+      },
     })
   }
+
+  useEffect(() => {
+    // get route if payload is ready
+    if (fromChain && fromToken && fromAmount && toChain && toToken) {
+      console.debug("fromAmount", fromAmount)
+      setIsReadyForRoute(true)
+      return
+    }
+    setIsReadyForRoute(false)
+  }, [fromAmount, fromChain, fromToken, toChain, toToken])
 
   return (
     <Stack spacing="5" w="full" bg="white" maxW="lg" rounded="2xl" p="8">
@@ -80,20 +81,23 @@ export default function Swap() {
         rightText="Balance: 1.17 BTC"
         chainElement={
           <ChainSelector
-            selectedChainId={selectedChainIdFrom}
+            selectedChainId={fromChain}
             onSelectChain={(chainId) =>
-              dispatch({ type: "setSelectedChainIdFrom", payload: chainId })
+              dispatch({
+                type: "setState",
+                payload: { fromChain: chainId },
+              })
             }
           />
         }
         tokenElement={
           <TokenSelector
-            selectedChainId={selectedChainIdFrom}
-            selectedToken={selectedTokenFrom}
+            selectedChainId={fromChain}
+            selectedToken={fromToken}
             onSelectToken={(token) =>
               dispatch({
-                type: "setSelectedTokenFrom",
-                payload: token,
+                type: "setState",
+                payload: { fromToken: token },
               })
             }
           />
@@ -110,20 +114,23 @@ export default function Swap() {
         rightText="≈ $1,000.00"
         chainElement={
           <ChainSelector
-            selectedChainId={selectedChainIdTo}
+            selectedChainId={toChain}
             onSelectChain={(chainId) =>
-              dispatch({ type: "setSelectedChainIdTo", payload: chainId })
+              dispatch({
+                type: "setState",
+                payload: { toChain: chainId },
+              })
             }
           />
         }
         tokenElement={
           <TokenSelector
-            selectedChainId={selectedChainIdTo}
-            selectedToken={selectedTokenTo}
+            selectedChainId={toChain}
+            selectedToken={toToken}
             onSelectToken={(token) =>
               dispatch({
-                type: "setSelectedTokenTo",
-                payload: token,
+                type: "setState",
+                payload: { toToken: token },
               })
             }
           />
@@ -151,7 +158,13 @@ export default function Swap() {
       </Stack>
 
       {/* Swap Button */}
-      <Button colorScheme="brand" size="lg" fontWeight="bold" w="full">
+      <Button
+        colorScheme="brand"
+        size="lg"
+        fontWeight="bold"
+        w="full"
+        isDisabled={!isReadyForRoute}
+      >
         Swap
       </Button>
     </Stack>
