@@ -7,7 +7,7 @@ type MainContextStateType = {
   squid: Squid | null
   fromChain: string | number
   fromToken: string | number
-  fromAmount: string
+  fromAmount: number
   toChain: string | number
   toToken: string | number
   toAddress: string
@@ -43,7 +43,7 @@ function MainContextProvider({ children, squid }: MainContextProviderProps) {
     squid,
     fromChain: "",
     fromToken: "",
-    fromAmount: "",
+    fromAmount: 0,
     toChain: "",
     toToken: "",
     toAddress: "",

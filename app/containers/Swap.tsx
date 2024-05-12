@@ -21,14 +21,25 @@ import TokenSelector from "~/app/containers/TokenSelector"
 import { useMainContext } from "~/app/contexts/MainContext"
 import { useWeb3ModalAccount } from "@web3modal/ethers/react"
 import { StringHelper } from "~/app/libs/string"
+import { HttpHelper } from "~/app/libs/http"
 
 export default function Swap() {
   const {
-    state: { fromChain, toChain, fromToken, toToken, fromAmount, toAddress },
+    state: {
+      squid,
+      fromChain,
+      toChain,
+      fromToken,
+      toToken,
+      fromAmount,
+      toAddress,
+      slippage,
+    },
     dispatch,
   } = useMainContext()
   const { address, isConnected } = useWeb3ModalAccount()
   const [mode, setMode] = useState<"swap" | "buy">("swap")
+  const [errorMessage, setErrorMessage] = useState("")
   const [isReadyForRoute, setIsReadyForRoute] = useState(false)
 
   useEffect(() => {
@@ -50,25 +61,40 @@ export default function Swap() {
     })
   }
 
-  // async function getRoute() {
-  //   const params = {
-  //     fromChain,
-  //     fromToken,
-  //     fromAmount,
-  //     toChain,
-  //     toToken,
-  //     fromAddress: address,
-  //     toAddress,
-  //   }
-  // }
+  async function getRoute() {
+    const params = {
+      fromChain,
+      fromToken: String(fromToken),
+      fromAmount: String(fromAmount * 1e18),
+      toChain,
+      toToken: String(toToken),
+      fromAddress: String(address),
+      toAddress,
+      slippage,
+    }
+
+    try {
+      setErrorMessage("")
+      const res = await squid?.getRoute(params)
+
+      console.debug("Route", res?.route)
+      console.debug("RequestId", res?.requestId)
+      console.debug("IntegratorId", res?.integratorId)
+    } catch (err) {
+      const error = HttpHelper.axiosErrorHandler(err)
+      setErrorMessage(error?.errors?.[0]?.message || error?.message || "")
+    }
+  }
 
   useEffect(() => {
     // get route if payload is ready
     if (fromChain && fromToken && fromAmount && toChain && toToken) {
       setIsReadyForRoute(true)
+      getRoute()
       return
     }
     setIsReadyForRoute(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromAmount, fromChain, fromToken, toChain, toToken])
 
   function handleChangeToAddress(value: string) {
@@ -112,6 +138,9 @@ export default function Swap() {
       <SwapInput
         name="from"
         rightText="Balance: 1.17 BTC"
+        onChange={(value) =>
+          dispatch({ type: "setState", payload: { fromAmount: Number(value) } })
+        }
         chainElement={
           <ChainSelector
             selectedChainId={fromChain}
@@ -219,6 +248,21 @@ export default function Swap() {
           <Text color="gray.600">1.5%</Text>
         </Flex>
       </Stack>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <Box
+          mt="-3"
+          p="3"
+          bg="red.50"
+          rounded="lg"
+          border="1px"
+          borderColor="red.200"
+          color="red.500"
+        >
+          {errorMessage}
+        </Box>
+      )}
 
       {/* Swap Button */}
       <Button

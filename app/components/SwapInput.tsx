@@ -4,6 +4,7 @@ import { Flex, Input, Text, VStack } from "@chakra-ui/react"
 
 interface Props {
   name: string
+  onChange?: (value: string) => void
   label?: string
   rightText?: string
   chainElement?: React.ReactNode
@@ -13,6 +14,7 @@ interface Props {
 
 export default function SwapInput({
   name,
+  onChange,
   label = "You pay",
   rightText,
   chainElement,
@@ -38,6 +40,7 @@ export default function SwapInput({
           variant="unstyled"
           fontSize="2xl"
           type="number"
+          onChange={(event) => onChange && onChange(event.target.value)}
         />
         {tokenElement}
       </Flex>
