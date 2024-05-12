@@ -1,15 +1,6 @@
 "use client"
 
-import {
-  Box,
-  Button,
-  Flex,
-  FormLabel,
-  Input,
-  Stack,
-  Text,
-  VStack,
-} from "@chakra-ui/react"
+import { Flex, Input, Text, VStack } from "@chakra-ui/react"
 
 interface Props {
   name: string
@@ -17,6 +8,7 @@ interface Props {
   rightText?: string
   chainElement?: React.ReactNode
   tokenElement?: React.ReactNode
+  addressElement?: React.ReactNode
 }
 
 export default function SwapInput({
@@ -25,10 +17,14 @@ export default function SwapInput({
   rightText,
   chainElement,
   tokenElement,
+  addressElement,
 }: Props) {
   return (
     <VStack p="4" bg="brand.bgInput" rounded="lg" align="flex-start">
-      {chainElement}
+      <Flex justify="space-between" align="center" w="full">
+        {chainElement}
+        {addressElement}
+      </Flex>
       <Flex justify="space-between" align="center" color="gray.500" w="full">
         <Text fontWeight="regular" fontSize="sm" id={name}>
           {label}

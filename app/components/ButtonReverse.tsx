@@ -17,8 +17,7 @@ export default function ButtonReverse(props: Props) {
       }}
       {...props}
       aria-label="btn-reverse"
-    >
-      <ArrowDownIcon boxSize={5} />
-    </IconButton>
+      icon={<ArrowDownIcon boxSize={5} />}
+    />
   )
 }
