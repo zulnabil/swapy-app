@@ -5,9 +5,11 @@ import { createContext, useContext, useReducer } from "react"
 
 type MainContextStateType = {
   squid: Squid | null
+  balance: number
   fromChain: string | number
   fromToken: string | number
   fromAmount: number
+  toAmount: number
   toChain: string | number
   toToken: string | number
   toAddress: string
@@ -41,9 +43,11 @@ interface MainContextProviderProps extends Pick<MainContextStateType, "squid"> {
 function MainContextProvider({ children, squid }: MainContextProviderProps) {
   const [state, dispatch] = useReducer(contextReducer, {
     squid,
+    balance: 0,
     fromChain: "",
     fromToken: "",
     fromAmount: 0,
+    toAmount: 0,
     toChain: "",
     toToken: "",
     toAddress: "",

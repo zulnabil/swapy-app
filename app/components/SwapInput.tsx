@@ -1,12 +1,20 @@
 "use client"
 
-import { Flex, Input, Text, VStack } from "@chakra-ui/react"
+import {
+  Flex,
+  Input,
+  InputProps,
+  Skeleton,
+  Text,
+  VStack,
+} from "@chakra-ui/react"
 
-interface Props {
+interface Props extends Omit<InputProps, "onChange"> {
   name: string
+  isLoading?: boolean
   onChange?: (value: string) => void
-  label?: string
-  rightText?: string
+  label?: React.ReactNode | string
+  balanceElement?: React.ReactNode
   chainElement?: React.ReactNode
   tokenElement?: React.ReactNode
   addressElement?: React.ReactNode
@@ -14,12 +22,14 @@ interface Props {
 
 export default function SwapInput({
   name,
+  isLoading,
   onChange,
   label = "You pay",
-  rightText,
+  balanceElement,
   chainElement,
   tokenElement,
   addressElement,
+  ...props
 }: Props) {
   return (
     <VStack p="4" bg="brand.bgInput" rounded="lg" align="flex-start">
@@ -28,20 +38,25 @@ export default function SwapInput({
         {addressElement}
       </Flex>
       <Flex justify="space-between" align="center" color="gray.500" w="full">
-        <Text fontWeight="regular" fontSize="sm" id={name}>
-          {label}
-        </Text>
-        <Text fontSize="xs">{rightText}</Text>
+        <Skeleton isLoaded={!isLoading}>
+          <Text fontWeight="regular" fontSize="sm" id={name}>
+            {label}
+          </Text>
+        </Skeleton>
+        {balanceElement}
       </Flex>
       <Flex justify="space-between" align="center" gap="3" w="full">
-        <Input
-          name={name}
-          placeholder="0.0"
-          variant="unstyled"
-          fontSize="2xl"
-          type="number"
-          onChange={(event) => onChange && onChange(event.target.value)}
-        />
+        <Skeleton isLoaded={!isLoading}>
+          <Input
+            name={name}
+            placeholder="0.0"
+            variant="unstyled"
+            fontSize="2xl"
+            type="number"
+            onChange={(event) => onChange && onChange(event.target.value)}
+            {...props}
+          />
+        </Skeleton>
         {tokenElement}
       </Flex>
     </VStack>

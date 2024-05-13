@@ -10,43 +10,72 @@ import {
   EditablePreview,
   Flex,
   IconButton,
+  Skeleton,
   Stack,
   Text,
 } from "@chakra-ui/react"
-import { useEffect, useMemo, useState } from "react"
+import { use, useEffect, useMemo, useState } from "react"
 import SwapInput from "~/app/components/SwapInput"
 import ButtonReverse from "~/app/components/ButtonReverse"
 import ChainSelector from "~/app/containers/ChainSelector"
 import TokenSelector from "~/app/containers/TokenSelector"
 import { useMainContext } from "~/app/contexts/MainContext"
-import { useWeb3ModalAccount } from "@web3modal/ethers/react"
+import {
+  useWalletInfo,
+  useWeb3ModalAccount,
+  useWeb3ModalProvider,
+} from "@web3modal/ethers/react"
 import { StringHelper } from "~/app/libs/string"
 import { HttpHelper } from "~/app/libs/http"
+import { ethers } from "ethers"
+import { NumberHelper } from "~/app/libs/number"
 
 export default function Swap() {
   const {
     state: {
       squid,
+      balance,
       fromChain,
       toChain,
       fromToken,
       toToken,
       fromAmount,
+      toAmount,
       toAddress,
       slippage,
     },
     dispatch,
   } = useMainContext()
   const { address, isConnected } = useWeb3ModalAccount()
+  const { walletProvider } = useWeb3ModalProvider()
+  const [isLoading, setIsLoading] = useState(false)
   const [mode, setMode] = useState<"swap" | "buy">("swap")
   const [errorMessage, setErrorMessage] = useState("")
   const [isReadyForRoute, setIsReadyForRoute] = useState(false)
+  const [fromAmountInDollar, setFromAmountInDollar] = useState(0)
+  const [toAmountInDollar, setToAmountInDollar] = useState(0)
+  const [exchangeRate, setExchangeRate] = useState("")
+  const [networkFee, setNetworkFee] = useState("")
+  const [priceImpact, setPriceImpact] = useState("")
+
+  async function getBalance() {
+    if (!walletProvider || !address) return
+
+    // get balance of the connected wallet address
+    const balance = await new ethers.BrowserProvider(walletProvider).getBalance(
+      address
+    )
+    dispatch({ type: "setState", payload: { balance: Number(balance) } })
+  }
 
   useEffect(() => {
     // when wallet connected, set its address to default toAddress
     if (isConnected) {
       dispatch({ type: "setState", payload: { toAddress: address } })
+
+      getBalance()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, dispatch, isConnected])
 
   function handleReverseFromTo() {
@@ -74,15 +103,33 @@ export default function Swap() {
     }
 
     try {
+      setIsLoading(true)
       setErrorMessage("")
       const res = await squid?.getRoute(params)
 
-      console.debug("Route", res?.route)
-      console.debug("RequestId", res?.requestId)
-      console.debug("IntegratorId", res?.integratorId)
+      // set estimated toAmount
+      const estimatedToAmount = res?.route?.estimate?.toAmount
+      dispatch({
+        type: "setState",
+        payload: { toAmount: Number(estimatedToAmount) / 1e18 },
+      })
+
+      // set exchange rate
+      const rate = res?.route?.estimate?.exchangeRate || ""
+      setExchangeRate(Number(rate).toFixed(4))
+
+      // set network fee
+      const fee = res?.route?.estimate?.feeCosts[0]?.amountUSD || ""
+      setNetworkFee(fee)
+
+      // set price impact
+      const impact = res?.route?.estimate?.aggregatePriceImpact || ""
+      setPriceImpact(impact)
     } catch (err) {
       const error = HttpHelper.axiosErrorHandler(err)
       setErrorMessage(error?.errors?.[0]?.message || error?.message || "")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -104,6 +151,68 @@ export default function Swap() {
       payload: { toAddress: value },
     })
   }
+
+  function setBalanceToAmount() {
+    dispatch({
+      type: "setState",
+      payload: { fromAmount: Number(balance) / 1e18 },
+    })
+  }
+
+  async function getAmountInDollar(
+    chain: string | number,
+    token: string | number,
+    amount: number
+  ) {
+    const price = await squid?.getTokenPrice({
+      chainId: chain,
+      tokenAddress: String(token),
+    })
+    return price ? Number((amount * price).toFixed(4)) : 0
+  }
+
+  useEffect(() => {
+    // get fromAmount in dollar
+    if (fromAmount && fromChain && fromToken && squid) {
+      getAmountInDollar(fromChain, fromToken, fromAmount).then((value) =>
+        setFromAmountInDollar(value)
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromAmount, fromChain, fromToken, squid])
+
+  useEffect(() => {
+    // get fromAmount in dollar
+    if (toAmount && toChain && toToken && squid) {
+      getAmountInDollar(toChain, toToken, toAmount).then((value) =>
+        setToAmountInDollar(value)
+      )
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toAmount, toChain, toToken, squid])
+
+  // get from token symbol
+  const fromTokenSymbol = useMemo(() => {
+    const token = squid?.tokens.find(
+      (token) => token.address === fromToken
+    )?.symbol
+    return token || ""
+  }, [fromToken, squid?.tokens])
+
+  // get to token symbol
+  const toTokenSymbol = useMemo(() => {
+    const token = squid?.tokens.find(
+      (token) => token.address === toToken
+    )?.symbol
+    return token || ""
+  }, [toToken, squid?.tokens])
+
+  const exchangeRateString = useMemo(() => {
+    if (fromTokenSymbol && exchangeRate && toTokenSymbol) {
+      return `1 ${fromTokenSymbol} ≈ ${exchangeRate} ${toTokenSymbol}`
+    }
+    return ""
+  }, [exchangeRate, fromTokenSymbol, toTokenSymbol])
 
   return (
     <Stack spacing="5" w="full" bg="white" maxW="lg" rounded="2xl" p="8">
@@ -137,7 +246,14 @@ export default function Swap() {
       {/* Swap Entities */}
       <SwapInput
         name="from"
-        rightText="Balance: 1.17 BTC"
+        isLoading={isLoading}
+        label={`You pay $${fromAmountInDollar}`}
+        value={fromAmount}
+        balanceElement={
+          <Text fontSize="xs" cursor="pointer" onClick={setBalanceToAmount}>
+            Balance: {NumberHelper.formatBalance(balance)} ETH
+          </Text>
+        }
         onChange={(value) =>
           dispatch({ type: "setState", payload: { fromAmount: Number(value) } })
         }
@@ -172,8 +288,10 @@ export default function Swap() {
 
       <SwapInput
         name="to"
-        label="You get"
-        rightText="≈ $1,000.00"
+        label={`You get $${toAmountInDollar}`}
+        isLoading={isLoading}
+        isReadOnly
+        value={toAmount}
         chainElement={
           <ChainSelector
             selectedChainId={toChain}
@@ -235,17 +353,23 @@ export default function Swap() {
       <Stack spacing="3" mb="3" fontSize="sm" color="gray.500">
         <Flex justify="space-between">
           <Text>Exchange Rate</Text>
-          <Text color="brand.500" fontWeight="medium">
-            1 BTC ≈ 16.02 ETH
-          </Text>
+          <Skeleton isLoaded={!isLoading}>
+            <Text color="brand.500" fontWeight="medium">
+              {exchangeRateString}
+            </Text>
+          </Skeleton>
         </Flex>
         <Flex justify="space-between">
           <Text>Network Fee</Text>
-          <Text color="gray.600">$0.25</Text>
+          <Skeleton isLoaded={!isLoading}>
+            <Text color="gray.600">${networkFee}</Text>
+          </Skeleton>
         </Flex>
         <Flex justify="space-between">
           <Text>Price Impact</Text>
-          <Text color="gray.600">1.5%</Text>
+          <Skeleton isLoaded={!isLoading}>
+            <Text color="gray.600">{priceImpact}%</Text>
+          </Skeleton>
         </Flex>
       </Stack>
 
