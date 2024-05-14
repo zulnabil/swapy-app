@@ -7,21 +7,20 @@ import {
   Divider,
   Editable,
   EditableInput,
-  EditablePreview,
   Flex,
   IconButton,
   Skeleton,
   Stack,
   Text,
 } from "@chakra-ui/react"
-import { use, useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import SwapInput from "~/app/components/SwapInput"
 import ButtonReverse from "~/app/components/ButtonReverse"
 import ChainSelector from "~/app/containers/ChainSelector"
 import TokenSelector from "~/app/containers/TokenSelector"
 import { useMainContext } from "~/app/contexts/MainContext"
 import {
-  useWalletInfo,
+  useSwitchNetwork,
   useWeb3ModalAccount,
   useWeb3ModalProvider,
 } from "@web3modal/ethers/react"
@@ -29,6 +28,8 @@ import { StringHelper } from "~/app/libs/string"
 import { HttpHelper } from "~/app/libs/http"
 import { ethers } from "ethers"
 import { NumberHelper } from "~/app/libs/number"
+import { ExecuteRoute, RouteData } from "@0xsquid/sdk"
+import { TransactionResponse } from "ethers"
 
 export default function Swap() {
   const {
@@ -46,10 +47,12 @@ export default function Swap() {
     },
     dispatch,
   } = useMainContext()
-  const { address, isConnected } = useWeb3ModalAccount()
+  const { address, isConnected, chainId } = useWeb3ModalAccount()
   const { walletProvider } = useWeb3ModalProvider()
+  const { switchNetwork } = useSwitchNetwork()
+  const [route, setRoute] = useState<RouteData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [mode, setMode] = useState<"swap" | "buy">("swap")
+  const [isLoadingSwap, setIsLoadingSwap] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [isReadyForRoute, setIsReadyForRoute] = useState(false)
   const [fromAmountInDollar, setFromAmountInDollar] = useState(0)
@@ -78,6 +81,7 @@ export default function Swap() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address, dispatch, isConnected])
 
+  // reverse from and to chain and token
   function handleReverseFromTo() {
     dispatch({
       type: "setState",
@@ -90,6 +94,7 @@ export default function Swap() {
     })
   }
 
+  // get route from squid when payload is ready
   async function getRoute() {
     const params = {
       fromChain,
@@ -118,6 +123,7 @@ export default function Swap() {
       // set ready for route
       if (res?.route?.estimate?.toAmount) {
         setIsReadyForRoute(true)
+        setRoute(res?.route)
       }
 
       // set exchange rate
@@ -156,13 +162,7 @@ export default function Swap() {
     })
   }
 
-  function setBalanceToAmount() {
-    dispatch({
-      type: "setState",
-      payload: { fromAmount: Number(balance) / 1e18 },
-    })
-  }
-
+  // get amount token and convert it to dollar price
   async function getAmountInDollar(
     chain: string | number,
     token: string | number,
@@ -211,6 +211,7 @@ export default function Swap() {
     return token || ""
   }, [squid?.tokens, toChain, toToken])
 
+  // get exchange rate string
   const exchangeRateString = useMemo(() => {
     if (fromTokenSymbol && exchangeRate && toTokenSymbol) {
       return `1 ${fromTokenSymbol} ≈ ${exchangeRate} ${toTokenSymbol}`
@@ -218,25 +219,41 @@ export default function Swap() {
     return ""
   }, [exchangeRate, fromTokenSymbol, toTokenSymbol])
 
+  // handle swap transaction
+  async function handleSubmitSwap() {
+    if (!walletProvider || !address || !route) return
+    const signer = await new ethers.BrowserProvider(walletProvider).getSigner()
+
+    console.debug("signer", signer)
+
+    try {
+      setIsLoadingSwap(true)
+      setErrorMessage("")
+      const tx = await squid?.executeRoute({
+        signer: signer as unknown as ExecuteRoute["signer"],
+        route,
+      })
+
+      const txReceipt = await (tx as unknown as TransactionResponse)?.wait()
+
+      console.debug("txReceipt", txReceipt)
+    } catch (err) {
+      const error = HttpHelper.axiosErrorHandler(err)
+      setErrorMessage(error?.errors?.[0]?.message || error?.message || error)
+    } finally {
+      setIsLoadingSwap(false)
+    }
+  }
+
   return (
     <Stack spacing="5" w="full" bg="white" maxW="lg" rounded="2xl" p="8">
       {/* Header */}
       <Flex justify="space-between">
         <Flex gap="4">
-          <Button
-            color={mode === "swap" ? "gray.600" : "gray.300"}
-            fontWeight="medium"
-            variant="link"
-            onClick={() => setMode("swap")}
-          >
+          <Button color="gray.600" fontWeight="medium" variant="link">
             Swap
           </Button>
-          <Button
-            color={mode === "buy" ? "gray.600" : "gray.300"}
-            fontWeight="medium"
-            variant="link"
-            onClick={() => setMode("buy")}
-          >
+          <Button color="gray.300" fontWeight="medium" variant="link">
             Buy
           </Button>
         </Flex>
@@ -253,7 +270,16 @@ export default function Swap() {
         label={`You pay $${fromAmountInDollar}`}
         value={fromAmount}
         balanceElement={
-          <Text fontSize="xs" cursor="pointer" onClick={setBalanceToAmount}>
+          <Text
+            fontSize="xs"
+            cursor="pointer"
+            onClick={() =>
+              dispatch({
+                type: "setState",
+                payload: { fromAmount: Number(balance) / 1e18 },
+              })
+            }
+          >
             Balance: {NumberHelper.formatBalance(balance)} ETH
           </Text>
         }
@@ -285,6 +311,7 @@ export default function Swap() {
         }
       />
 
+      {/* Reverse source and destination chain and token */}
       <Flex mt={["-8", "-9"]} mb={["-8", "-9"]} justify="center">
         <ButtonReverse onClick={handleReverseFromTo} />
       </Flex>
@@ -400,8 +427,9 @@ export default function Swap() {
         fontWeight="bold"
         w="full"
         isDisabled={!isReadyForRoute}
-        isLoading={isLoading}
+        isLoading={isLoading || isLoadingSwap}
         loadingText={isLoading ? "Getting Route..." : "Swapping..."}
+        onClick={handleSubmitSwap}
       >
         Swap
       </Button>
