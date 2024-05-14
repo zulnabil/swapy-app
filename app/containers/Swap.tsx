@@ -103,6 +103,7 @@ export default function Swap() {
     }
 
     try {
+      setIsReadyForRoute(false)
       setIsLoading(true)
       setErrorMessage("")
       const res = await squid?.getRoute(params)
@@ -113,6 +114,11 @@ export default function Swap() {
         type: "setState",
         payload: { toAmount: Number(estimatedToAmount) / 1e18 },
       })
+
+      // set ready for route
+      if (res?.route?.estimate?.toAmount) {
+        setIsReadyForRoute(true)
+      }
 
       // set exchange rate
       const rate = res?.route?.estimate?.exchangeRate || ""
@@ -136,11 +142,9 @@ export default function Swap() {
   useEffect(() => {
     // get route if payload is ready
     if (fromChain && fromToken && fromAmount && toChain && toToken) {
-      setIsReadyForRoute(true)
       getRoute()
       return
     }
-    setIsReadyForRoute(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromAmount, fromChain, fromToken, toChain, toToken])
 
@@ -194,18 +198,18 @@ export default function Swap() {
   // get from token symbol
   const fromTokenSymbol = useMemo(() => {
     const token = squid?.tokens.find(
-      (token) => token.address === fromToken
+      (token) => token.chainId === fromChain && token.address === fromToken
     )?.symbol
     return token || ""
-  }, [fromToken, squid?.tokens])
+  }, [fromChain, fromToken, squid?.tokens])
 
   // get to token symbol
   const toTokenSymbol = useMemo(() => {
     const token = squid?.tokens.find(
-      (token) => token.address === toToken
+      (token) => token.chainId === toChain && token.address === toToken
     )?.symbol
     return token || ""
-  }, [toToken, squid?.tokens])
+  }, [squid?.tokens, toChain, toToken])
 
   const exchangeRateString = useMemo(() => {
     if (fromTokenSymbol && exchangeRate && toTokenSymbol) {
@@ -246,7 +250,6 @@ export default function Swap() {
       {/* Swap Entities */}
       <SwapInput
         name="from"
-        isLoading={isLoading}
         label={`You pay $${fromAmountInDollar}`}
         value={fromAmount}
         balanceElement={
@@ -263,7 +266,7 @@ export default function Swap() {
             onSelectChain={(chainId) =>
               dispatch({
                 type: "setState",
-                payload: { fromChain: chainId },
+                payload: { fromChain: chainId, fromToken: "" },
               })
             }
           />
@@ -298,7 +301,7 @@ export default function Swap() {
             onSelectChain={(chainId) =>
               dispatch({
                 type: "setState",
-                payload: { toChain: chainId },
+                payload: { toChain: chainId, toToken: "" },
               })
             }
           />
@@ -355,20 +358,22 @@ export default function Swap() {
           <Text>Exchange Rate</Text>
           <Skeleton isLoaded={!isLoading}>
             <Text color="brand.500" fontWeight="medium">
-              {exchangeRateString}
+              {exchangeRateString || "-"}
             </Text>
           </Skeleton>
         </Flex>
         <Flex justify="space-between">
           <Text>Network Fee</Text>
           <Skeleton isLoaded={!isLoading}>
-            <Text color="gray.600">${networkFee}</Text>
+            <Text color="gray.600">{networkFee ? `$${networkFee}` : "-"}</Text>
           </Skeleton>
         </Flex>
         <Flex justify="space-between">
           <Text>Price Impact</Text>
           <Skeleton isLoaded={!isLoading}>
-            <Text color="gray.600">{priceImpact}%</Text>
+            <Text color="gray.600">
+              {priceImpact ? `${priceImpact}%` : "-"}
+            </Text>
           </Skeleton>
         </Flex>
       </Stack>
@@ -395,6 +400,8 @@ export default function Swap() {
         fontWeight="bold"
         w="full"
         isDisabled={!isReadyForRoute}
+        isLoading={isLoading}
+        loadingText={isLoading ? "Getting Route..." : "Swapping..."}
       >
         Swap
       </Button>
