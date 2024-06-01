@@ -253,13 +253,16 @@ export default function Swap() {
       toast({
         title: "Swap Success",
         description: `You have
-        swapped ${fromAmount} ${fromTokenSymbol} to ${toAmount} ${toTokenSymbol}`,
+        swapped ${fromAmount.toFixed(
+          4
+        )} ${fromTokenSymbol} to ${toAmount.toFixed(4)} ${toTokenSymbol}`,
         status: "success",
         duration: 3000,
         isClosable: true,
+        position: "bottom",
       });
       setIsLoadingSwap(false);
-    }, 3000);
+    }, 1000);
   }
 
   return (
