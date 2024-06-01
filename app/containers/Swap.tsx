@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { EditIcon, SettingsIcon } from "@chakra-ui/icons"
+import { EditIcon, SettingsIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -12,26 +12,28 @@ import {
   Skeleton,
   Stack,
   Text,
-} from "@chakra-ui/react"
-import { useEffect, useMemo, useState } from "react"
-import SwapInput from "~/app/components/SwapInput"
-import ButtonReverse from "~/app/components/ButtonReverse"
-import ChainSelector from "~/app/containers/ChainSelector"
-import TokenSelector from "~/app/containers/TokenSelector"
-import { useMainContext } from "~/app/contexts/MainContext"
+  useToast,
+} from "@chakra-ui/react";
+import { useEffect, useMemo, useState } from "react";
+import SwapInput from "~/app/components/SwapInput";
+import ButtonReverse from "~/app/components/ButtonReverse";
+import ChainSelector from "~/app/containers/ChainSelector";
+import TokenSelector from "~/app/containers/TokenSelector";
+import { useMainContext } from "~/app/contexts/MainContext";
 import {
   useSwitchNetwork,
   useWeb3ModalAccount,
   useWeb3ModalProvider,
-} from "@web3modal/ethers/react"
-import { StringHelper } from "~/app/libs/string"
-import { HttpHelper } from "~/app/libs/http"
-import { ethers } from "ethers"
-import { NumberHelper } from "~/app/libs/number"
-import { ExecuteRoute, RouteData } from "@0xsquid/sdk"
-import { TransactionResponse } from "ethers"
+} from "@web3modal/ethers/react";
+import { StringHelper } from "~/app/libs/string";
+import { HttpHelper } from "~/app/libs/http";
+import { ethers } from "ethers";
+import { NumberHelper } from "~/app/libs/number";
+import { ExecuteRoute, RouteData } from "@0xsquid/sdk";
+import { TransactionResponse } from "ethers";
 
 export default function Swap() {
+  const toast = useToast();
   const {
     state: {
       squid,
@@ -46,40 +48,40 @@ export default function Swap() {
       slippage,
     },
     dispatch,
-  } = useMainContext()
-  const { address, isConnected, chainId } = useWeb3ModalAccount()
-  const { walletProvider } = useWeb3ModalProvider()
-  const { switchNetwork } = useSwitchNetwork()
-  const [route, setRoute] = useState<RouteData | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingSwap, setIsLoadingSwap] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [isReadyForRoute, setIsReadyForRoute] = useState(false)
-  const [fromAmountInDollar, setFromAmountInDollar] = useState(0)
-  const [toAmountInDollar, setToAmountInDollar] = useState(0)
-  const [exchangeRate, setExchangeRate] = useState("")
-  const [networkFee, setNetworkFee] = useState("")
-  const [priceImpact, setPriceImpact] = useState("")
+  } = useMainContext();
+  const { address, isConnected, chainId } = useWeb3ModalAccount();
+  const { walletProvider } = useWeb3ModalProvider();
+  const { switchNetwork } = useSwitchNetwork();
+  const [route, setRoute] = useState<RouteData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSwap, setIsLoadingSwap] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isReadyForRoute, setIsReadyForRoute] = useState(false);
+  const [fromAmountInDollar, setFromAmountInDollar] = useState(0);
+  const [toAmountInDollar, setToAmountInDollar] = useState(0);
+  const [exchangeRate, setExchangeRate] = useState("");
+  const [networkFee, setNetworkFee] = useState("");
+  const [priceImpact, setPriceImpact] = useState("");
 
   async function getBalance() {
-    if (!walletProvider || !address) return
+    if (!walletProvider || !address) return;
 
     // get balance of the connected wallet address
     const balance = await new ethers.BrowserProvider(walletProvider).getBalance(
       address
-    )
-    dispatch({ type: "setState", payload: { balance: Number(balance) } })
+    );
+    dispatch({ type: "setState", payload: { balance: Number(balance) } });
   }
 
   useEffect(() => {
     // when wallet connected, set its address to default toAddress
     if (isConnected) {
-      dispatch({ type: "setState", payload: { toAddress: address } })
+      dispatch({ type: "setState", payload: { toAddress: address } });
 
-      getBalance()
+      getBalance();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address, dispatch, isConnected])
+  }, [address, dispatch, isConnected]);
 
   // reverse from and to chain and token
   function handleReverseFromTo() {
@@ -91,7 +93,7 @@ export default function Swap() {
         fromToken: toToken,
         toToken: fromToken,
       },
-    })
+    });
   }
 
   // get route from squid when payload is ready
@@ -105,61 +107,61 @@ export default function Swap() {
       fromAddress: String(address),
       toAddress,
       slippage,
-    }
+    };
 
     try {
-      setIsReadyForRoute(false)
-      setIsLoading(true)
-      setErrorMessage("")
-      const res = await squid?.getRoute(params)
+      setIsReadyForRoute(false);
+      setIsLoading(true);
+      setErrorMessage("");
+      const res = await squid?.getRoute(params);
 
       // set estimated toAmount
-      const estimatedToAmount = res?.route?.estimate?.toAmount
+      const estimatedToAmount = res?.route?.estimate?.toAmount;
       dispatch({
         type: "setState",
         payload: { toAmount: Number(estimatedToAmount) / 1e18 },
-      })
+      });
 
       // set ready for route
       if (res?.route?.estimate?.toAmount) {
-        setIsReadyForRoute(true)
-        setRoute(res?.route)
+        setIsReadyForRoute(true);
+        setRoute(res?.route);
       }
 
       // set exchange rate
-      const rate = res?.route?.estimate?.exchangeRate || ""
-      setExchangeRate(Number(rate).toFixed(4))
+      const rate = res?.route?.estimate?.exchangeRate || "";
+      setExchangeRate(Number(rate).toFixed(4));
 
       // set network fee
-      const fee = res?.route?.estimate?.feeCosts[0]?.amountUSD || ""
-      setNetworkFee(fee)
+      const fee = res?.route?.estimate?.feeCosts[0]?.amountUSD || "";
+      setNetworkFee(fee);
 
       // set price impact
-      const impact = res?.route?.estimate?.aggregatePriceImpact || ""
-      setPriceImpact(impact)
+      const impact = res?.route?.estimate?.aggregatePriceImpact || "";
+      setPriceImpact(impact);
     } catch (err) {
-      const error = HttpHelper.axiosErrorHandler(err)
-      setErrorMessage(error?.errors?.[0]?.message || error?.message || "")
+      const error = HttpHelper.axiosErrorHandler(err);
+      setErrorMessage(error?.errors?.[0]?.message || error?.message || "");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
   useEffect(() => {
     // get route if payload is ready
     if (fromChain && fromToken && fromAmount && toChain && toToken) {
-      getRoute()
-      return
+      getRoute();
+      return;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromAmount, fromChain, fromToken, toChain, toToken])
+  }, [fromAmount, fromChain, fromToken, toChain, toToken]);
 
   function handleChangeToAddress(value: string) {
-    if (!value) return
+    if (!value) return;
     dispatch({
       type: "setState",
       payload: { toAddress: value },
-    })
+    });
   }
 
   // get amount token and convert it to dollar price
@@ -171,8 +173,8 @@ export default function Swap() {
     const price = await squid?.getTokenPrice({
       chainId: chain,
       tokenAddress: String(token),
-    })
-    return price ? Number((amount * price).toFixed(4)) : 0
+    });
+    return price ? Number((amount * price).toFixed(4)) : 0;
   }
 
   useEffect(() => {
@@ -180,69 +182,84 @@ export default function Swap() {
     if (fromAmount && fromChain && fromToken && squid) {
       getAmountInDollar(fromChain, fromToken, fromAmount).then((value) =>
         setFromAmountInDollar(value)
-      )
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromAmount, fromChain, fromToken, squid])
+  }, [fromAmount, fromChain, fromToken, squid]);
 
   useEffect(() => {
     // get fromAmount in dollar
     if (toAmount && toChain && toToken && squid) {
       getAmountInDollar(toChain, toToken, toAmount).then((value) =>
         setToAmountInDollar(value)
-      )
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toAmount, toChain, toToken, squid])
+  }, [toAmount, toChain, toToken, squid]);
 
   // get from token symbol
   const fromTokenSymbol = useMemo(() => {
     const token = squid?.tokens.find(
       (token) => token.chainId === fromChain && token.address === fromToken
-    )?.symbol
-    return token || ""
-  }, [fromChain, fromToken, squid?.tokens])
+    )?.symbol;
+    return token || "";
+  }, [fromChain, fromToken, squid?.tokens]);
 
   // get to token symbol
   const toTokenSymbol = useMemo(() => {
     const token = squid?.tokens.find(
       (token) => token.chainId === toChain && token.address === toToken
-    )?.symbol
-    return token || ""
-  }, [squid?.tokens, toChain, toToken])
+    )?.symbol;
+    return token || "";
+  }, [squid?.tokens, toChain, toToken]);
 
   // get exchange rate string
   const exchangeRateString = useMemo(() => {
     if (fromTokenSymbol && exchangeRate && toTokenSymbol) {
-      return `1 ${fromTokenSymbol} ≈ ${exchangeRate} ${toTokenSymbol}`
+      return `1 ${fromTokenSymbol} ≈ ${exchangeRate} ${toTokenSymbol}`;
     }
-    return ""
-  }, [exchangeRate, fromTokenSymbol, toTokenSymbol])
+    return "";
+  }, [exchangeRate, fromTokenSymbol, toTokenSymbol]);
 
   // handle swap transaction
   async function handleSubmitSwap() {
-    if (!walletProvider || !address || !route) return
-    const signer = await new ethers.BrowserProvider(walletProvider).getSigner()
+    if (!walletProvider || !address || !route) return;
+    const signer = await new ethers.BrowserProvider(walletProvider).getSigner();
 
-    console.debug("signer", signer)
+    console.debug("signer", signer);
 
     try {
-      setIsLoadingSwap(true)
-      setErrorMessage("")
+      setIsLoadingSwap(true);
+      setErrorMessage("");
       const tx = await squid?.executeRoute({
         signer: signer as unknown as ExecuteRoute["signer"],
         route,
-      })
+      });
 
-      const txReceipt = await (tx as unknown as TransactionResponse)?.wait()
+      const txReceipt = await (tx as unknown as TransactionResponse)?.wait();
 
-      console.debug("txReceipt", txReceipt)
+      console.debug("txReceipt", txReceipt);
     } catch (err) {
-      const error = HttpHelper.axiosErrorHandler(err)
-      setErrorMessage(error?.errors?.[0]?.message || error?.message || error)
+      const error = HttpHelper.axiosErrorHandler(err);
+      setErrorMessage(error?.errors?.[0]?.message || error?.message || error);
     } finally {
-      setIsLoadingSwap(false)
+      setIsLoadingSwap(false);
     }
+  }
+
+  function handleSubmitSwapDemo() {
+    setIsLoadingSwap(true);
+    setTimeout(() => {
+      toast({
+        title: "Swap Success",
+        description: `You have
+        swapped ${fromAmount} ${fromTokenSymbol} to ${toAmount} ${toTokenSymbol}`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsLoadingSwap(false);
+    }, 3000);
   }
 
   return (
@@ -429,10 +446,10 @@ export default function Swap() {
         isDisabled={!isReadyForRoute}
         isLoading={isLoading || isLoadingSwap}
         loadingText={isLoading ? "Getting Route..." : "Swapping..."}
-        onClick={handleSubmitSwap}
+        onClick={handleSubmitSwapDemo}
       >
         Swap
       </Button>
     </Stack>
-  )
+  );
 }
