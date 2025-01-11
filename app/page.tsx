@@ -1,7 +1,7 @@
 "use client";
 
 import { Squid } from "@0xsquid/sdk";
-import { Flex } from "@chakra-ui/react";
+import { Flex, Heading, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import Swap from "~/app/containers/Swap";
 import { MainContextProvider } from "~/app/contexts/MainContext";
@@ -28,7 +28,18 @@ export default function Main() {
     // Wrap Swap component with MainContextProvider and pass squid as prop
     <MainContextProvider squid={squid}>
       <SplashScreen />
-      <Flex as="main" py="4" justify="center">
+      <Flex
+        as="main"
+        py="6"
+        justify="center"
+        align="center"
+        flexDir="column"
+        gap="10"
+      >
+        <Heading as="h2" size="md" color="gray.600">
+          Using AI to aggregate the best rates such as Jupiter, OKX, and more to
+          get the cheapest swap fees.
+        </Heading>
         <Swap />
       </Flex>
     </MainContextProvider>
