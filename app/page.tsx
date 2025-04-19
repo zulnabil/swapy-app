@@ -10,9 +10,14 @@ import {
   Heading,
   HStack,
   Icon,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalCloseButton,
   Stack,
   Text,
   useBreakpointValue,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -93,6 +98,7 @@ const NetworkBadge = ({ name }: { name: string }) => (
 export default function Main() {
   const [squid, setSquid] = useState<Squid | null>(null);
   const isMobile = useBreakpointValue({ base: true, md: false });
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     // Initialize Squid SDK and set it to state
@@ -111,6 +117,48 @@ export default function Main() {
     // Wrap Swap component with MainContextProvider and pass squid as prop
     <MainContextProvider squid={squid}>
       <SplashScreen />
+
+      {/* Fullscreen Swap Modal */}
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="full"
+        motionPreset="slideInBottom"
+      >
+        <ModalOverlay bg="rgba(0, 0, 0, 0.2)" backdropFilter="blur(10px)" />
+        <ModalContent
+          bg="transparent"
+          boxShadow="none"
+          mx="auto"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          pt={{ base: "16", md: "24" }}
+          pb={{ base: "8", md: "12" }}
+        >
+          <ModalCloseButton
+            color="white"
+            bg="rgba(255, 255, 255, 0.1)"
+            borderRadius="full"
+            size="lg"
+            top="4"
+            right="4"
+            zIndex={10}
+            _hover={{
+              bg: "rgba(255, 255, 255, 0.2)",
+            }}
+          />
+          <Box maxW="lg" w="full" mx="auto" px={{ base: "4", md: "0" }}>
+            <MotionBox
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Swap />
+            </MotionBox>
+          </Box>
+        </ModalContent>
+      </Modal>
 
       <Container maxW="container.xl" py="12">
         {/* Hero Section */}
@@ -179,8 +227,18 @@ export default function Main() {
                   as={motion.button}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={onOpen}
                 >
                   Start Swapping
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  as={motion.button}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Learn More
                 </Button>
               </HStack>
 
@@ -198,7 +256,7 @@ export default function Main() {
           </GridItem>
 
           <GridItem
-            display="flex"
+            display={{ base: "none", lg: "flex" }}
             justifyContent={{ base: "center", lg: "flex-end" }}
             alignItems="center"
           >
@@ -434,6 +492,7 @@ export default function Main() {
                   as={motion.button}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={onOpen}
                 >
                   Start Now
                 </Button>
