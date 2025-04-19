@@ -1,11 +1,11 @@
 "use client";
 
-import { Squid } from "@0xsquid/sdk";
 import { Flex, Heading, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import Swap from "~/app/containers/Swap";
 import { MainContextProvider } from "~/app/contexts/MainContext";
 import { SplashScreen } from "./components/SplashScreen";
+import { Squid } from "@0xsquid/sdk";
 
 export default function Main() {
   const [squid, setSquid] = useState<Squid | null>(null);
@@ -13,12 +13,11 @@ export default function Main() {
   useEffect(() => {
     // Initialize Squid SDK and set it to state
     async function initiateSquid() {
-      const squid = new Squid();
-      squid.setConfig({
+      const squid = new Squid({
         baseUrl: process.env.NEXT_PUBLIC_BASE_API_URL,
-        integratorId: process.env.NEXT_PUBLIC_INTEGRATOR_ID,
+        integratorId: process.env.NEXT_PUBLIC_INTEGRATOR_ID || "",
       });
-      await squid.init();
+      squid.init();
       setSquid(squid);
     }
     initiateSquid();

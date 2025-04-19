@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useMemo, useRef, useState } from "react"
-import { ChevronDownIcon, Search2Icon } from "@chakra-ui/icons"
+import { useMemo, useRef, useState } from "react";
+import { ChevronDownIcon, Search2Icon } from "@chakra-ui/icons";
 import {
   Popover,
   PopoverTrigger,
@@ -13,13 +13,13 @@ import {
   InputLeftElement,
   Input,
   Image,
-} from "@chakra-ui/react"
-import { useMainContext } from "~/app/contexts/MainContext"
+} from "@chakra-ui/react";
+import { useMainContext } from "~/app/contexts/MainContext";
 
 interface Props {
-  defaultChainId?: string | number
-  selectedChainId?: string | number
-  onSelectChain: (chainId: string | number) => void
+  defaultChainId?: string | number;
+  selectedChainId?: string | number;
+  onSelectChain: (chainId: string | number) => void;
 }
 
 export default function ChainSelector({
@@ -29,18 +29,18 @@ export default function ChainSelector({
 }: Props) {
   const {
     state: { squid },
-  } = useMainContext()
-  const [search, setSearch] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
+  } = useMainContext();
+  const [search, setSearch] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   /**
    * Clear search input and reset search state
    */
   function handleClear() {
-    setSearch("")
+    setSearch("");
 
     if (inputRef.current) {
-      inputRef.current.value = ""
+      inputRef.current.value = "";
     }
   }
 
@@ -53,7 +53,7 @@ export default function ChainSelector({
         (chain) => chain.chainId === (selectedChainId || defaultChainId)
       ),
     [defaultChainId, selectedChainId, squid?.chains]
-  )
+  );
 
   return (
     <Popover initialFocusRef={inputRef} onClose={handleClear}>
@@ -63,9 +63,9 @@ export default function ChainSelector({
          * @param chainId
          */
         function handleSelect(chainId: string | number) {
-          onSelectChain(chainId)
-          onClose()
-          handleClear()
+          onSelectChain(chainId);
+          onClose();
+          handleClear();
         }
         return (
           <>
@@ -81,7 +81,7 @@ export default function ChainSelector({
                     <Image
                       h="20px"
                       w="20px"
-                      alt={`img-${selectedChain?.chainName}`}
+                      alt={`img-${selectedChain?.axelarChainName}`}
                       src={selectedChain?.chainIconURI}
                     />
                   ) : (
@@ -89,7 +89,7 @@ export default function ChainSelector({
                   )
                 }
               >
-                {selectedChain?.chainName || "Select Chain"}
+                {selectedChain?.axelarChainName || "Select Chain"}
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -116,7 +116,7 @@ export default function ChainSelector({
                 {squid?.chains
                   // filter chains by search input
                   ?.filter((chain) =>
-                    chain?.chainName
+                    chain?.axelarChainName
                       ?.toLowerCase()
                       .includes(search.toLowerCase())
                   )
@@ -139,20 +139,20 @@ export default function ChainSelector({
                         <Image
                           h="24px"
                           w="24px"
-                          alt={`img-${chain?.chainName}`}
+                          alt={`img-${chain?.axelarChainName}`}
                           src={chain?.chainIconURI}
                         />
                       }
                       onClick={() => handleSelect(chain?.chainId)}
                     >
-                      {chain?.chainName}
+                      {chain?.axelarChainName}
                     </Button>
                   ))}
               </PopoverBody>
             </PopoverContent>
           </>
-        )
+        );
       }}
     </Popover>
-  )
+  );
 }
